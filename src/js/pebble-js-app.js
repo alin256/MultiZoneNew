@@ -1,0 +1,106 @@
+
+function testRequest(place) {
+  //Pebble.sendAppMessage({"status": "Initiated"});
+  var req = new XMLHttpRequest();
+  req.open('GET', 'http://maps.googleapis.com/maps/api/geocode/json?address='+ place +
+           '&sensor=false', true);
+  req.onload = function(e) {
+  if (req.readyState == 4 && req.status == 200) {
+    //readystate 4 is DONE
+    //status 200 is OK
+    if(req.status == 200) {
+      var response = JSON.parse(req.responseText);
+      console.log(req.responseText);
+      var location = response.results[0].formatted_address;
+      //var icon = response.list[0].main.icon;
+      //Pebble.sendAppMessage({'status': stat, 'message':'test completed'});
+      Pebble.sendAppMessage({"status": "Processed","location":location});
+    } else { 
+      console.log('Error'); 
+      Pebble.sendAppMessage({"status": "Error"});
+    }
+  }
+  };
+  
+  
+  req.send(null);
+}
+
+function testRequestTime() {
+  Pebble.sendAppMessage({"status": "Initiated"});
+  var req = new XMLHttpRequest();
+  req.open('GET', 'https://maps.googleapis.com/maps/api/timezone/json?location=59,10&timestamp=360000000&sensor=false', true);
+  req.onload = function(e) {
+  if (req.readyState == 4 && req.status == 200) {
+    //readystate 4 is DONE
+    //status 200 is OK
+    if(req.status == 200) {
+      var response = JSON.parse(req.responseText);
+      console.log(req.responseText);
+      var rawOffset = response.rawOffset;
+      var dstOffset = response.dstOffset;
+      var totOffset = rawOffset+dstOffset;
+      //var icon = response.list[0].main.icon;
+      //Pebble.sendAppMessage({'status': stat, 'message':'test completed'});
+      Pebble.sendAppMessage({"status": "Processed","offset":totOffset});
+    } else { 
+      console.log('Error'); 
+      Pebble.sendAppMessage({"status": "Error"});
+    }
+  }
+  };
+  
+  
+  req.send(null);
+}
+
+
+
+function makeRequest(method, url, callback) {
+	var req = new XMLHttpRequest();
+	req.open(method, url, true);
+	req.onload = function(e) {
+		if(req.readyState == 4) { callback(req); }
+	};
+	req.send(null);
+}
+
+function getOffset(lat,lon){
+  var timestamp = new Date() / 1000 | 0;
+  makeRequest('GET', 'https://maps.googleapis.com/maps/api/timezone/json?location='lat+','+lon+'timestamp='+timestamp+'&sensor=false', true,my_callback2);
+}
+
+
+
+function getLocation(place){
+  makeRequest('GET','http://maps.googleapis.com/maps/api/geocode/json?address='+ place +'&sensor=false',my_callback1);
+}
+
+
+
+// Function to send a message to the Pebble using AppMessage API
+function sendMessage() {
+	//Pebble.sendAppMessage({"status": 0});
+  //testRequest();
+  //testRequestTime();
+	
+	// PRO TIP: If you are sending more than one message, or a complex set of messages, 
+	// it is important that you setup an ackHandler and a nackHandler and call 
+	// Pebble.sendAppMessage({ /* Message here */ }, ackHandler, nackHandler), which 
+	// will designate the ackHandler and nackHandler that will be called upon the Pebble 
+	// ack-ing or nack-ing the message you just sent. The specified nackHandler will 
+	// also be called if your message send attempt times out.
+}
+
+
+// Called when JS is ready
+Pebble.addEventListener("ready",
+							function(e) {
+							});
+												
+// Called when incoming message from the Pebble is received
+Pebble.addEventListener("appmessage",
+							function(e) {
+								console.log("Received Status: " + e.payload.status);
+								testRequest(e.payload.place);
+							});
