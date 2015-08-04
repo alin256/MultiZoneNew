@@ -1,6 +1,10 @@
 #include <pebble.h>
+#include "place_list.h"
 
+static const uint16_t TOTAL_LAYERS = 5;
 Window *window;	
+TextLayer **text_layers;
+static uint16_t curent_layer = 0;
 TextLayer *s_output_layer;
   
 // Key values for AppMessage Dictionary
@@ -89,17 +93,40 @@ static void main_window_load(Window *window) {
   text_layer_set_text(s_output_layer, "No button pressed yet.");
   text_layer_set_overflow_mode(s_output_layer, GTextOverflowModeWordWrap);
   layer_add_child(window_layer, text_layer_get_layer(s_output_layer));
+  
+  int32_t shift = 30;
+  text_layers = malloc(TOTAL_LAYERS*sizeof(TextLayer*));
+  for (uint16_t i = 0; i<TOTAL_LAYERS; ++i){
+    text_layers[i] = text_layer_create(GRect(5, i*shift, window_bounds.size.w - 5, shift));
+    text_layer_set_font(text_layers[i], fonts_get_system_font(FONT_KEY_GOTHIC_24));
+    text_layer_set_text(text_layers[i], "Layer");
+    text_layer_set_overflow_mode(text_layers[i], GTextOverflowModeTrailingEllipsis);
+    layer_add_child(window_layer, text_layer_get_layer(text_layers[i]));
+  }
 }
 
 
 static void main_window_unload(Window *window) {
   // Destroy output TextLayer
   text_layer_destroy(s_output_layer);
+  
+  for (uint16_t i = 0; i<TOTAL_LAYERS; ++i){
+    text_layer_destroy(text_layers[i]);
+  }
+  free(text_layers);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   //text_layer_set_text(s_output_layer, "Down pressed!");
-  send_message();
+  //sending message on click
+  //send_message();
+  while (curent_layer >= TOTAL_LAYERS){
+    curent_layer -= TOTAL_LAYERS;
+  }
+  int16_t total_places = sizeof(places)/sizeof(places[0]);
+  int16_t city_index = rand() % total_places;
+  text_layer_set_text(text_layers[curent_layer], places[city_index]);
+  curent_layer++;
 }
 
 
